@@ -18,7 +18,7 @@ app.factory('Server', [
 					this.data.push({
 						number: i,
 						title: 'Message #' + i,
-						text: Math.random().toString(36).substring(7)
+						text: Array(i % 20).join(0).split(0).map(Number.call, Number).join('\n')
 					});
 				}
 			},
