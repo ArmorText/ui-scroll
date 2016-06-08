@@ -18,7 +18,7 @@ app.factory('Server', [
 					this.data.push({
 						number: i,
 						title: 'Message #' + i,
-						text: Array(i % 20 + 1).join(0).split(0).map(Number.call, Number).join('\n')
+						text: Array(i % 25 + 1).join(0).split(0).map(Number.call, Number).join('\n')
 					});
 				}
 			},
@@ -57,8 +57,6 @@ app.controller('mainController', [
 		Server.init();
 
 		datasource.get = function (index, count, success) {
-			console.log('index = ' + index + '; count = ' + count);
-
 			var start = index;
 			var end = Math.min(index + count - 1, Server.first);
 
