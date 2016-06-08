@@ -37,7 +37,6 @@ app.factory('Server', [
 								result.push(item);
 							}
 						}
-						console.log('Server.request(' + start + ', ' + end + ')');
 					}
 					deferred.resolve(result);
 				}, self.delay);
@@ -57,14 +56,13 @@ app.controller('mainController', [
 		Server.init();
 
 		datasource.get = function (index, count, success) {
+			console.log('index = ' + index + '; count = ' + count);
+
 			var start = index;
 			var end = Math.min(index + count - 1, Server.first);
 
 			Server.request(start, end).then(success);
 		};
-		
-		datasource.minIndex = Server.first - Server.max;
-		datasource.maxIndex = Server.first;
 
 		$scope.datasource = datasource;
 
