@@ -18,7 +18,7 @@ app.factory('Server', [
 					this.data.push({
 						number: i,
 						title: 'Message #' + i,
-						text: Array(i % 20).join(0).split(0).map(Number.call, Number).join('\n')
+						text: Array(i % 20 + 1).join(0).split(0).map(Number.call, Number).join('\n')
 					});
 				}
 			},
