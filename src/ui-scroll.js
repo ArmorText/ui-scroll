@@ -123,6 +123,7 @@ angular.module('ui.scroll', [])
               ++buffer.next;
               buffer.insert('append', item);
             });
+            buffer.maxIndex = buffer.eof ? buffer.next - 1 : Math.max(buffer.next - 1, buffer.maxIndex);
           },
 
           prepend(items) {
@@ -130,6 +131,7 @@ angular.module('ui.scroll', [])
               --buffer.first;
               buffer.insert('prepend', item);
             });
+            buffer.minIndex = buffer.bof ? buffer.minIndex = buffer.first : Math.min(buffer.first, buffer.minIndex);
           },
 
           /**
@@ -173,14 +175,6 @@ angular.module('ui.scroll', [])
             buffer.splice(buffer.indexOf(arg1), 1);
 
             return removeElementAnimated(arg1);
-          },
-
-          setUpper() {
-            buffer.maxIndex = buffer.eof ? buffer.next - 1 : Math.max(buffer.next - 1, buffer.maxIndex);
-          },
-
-          setLower() {
-            buffer.minIndex = buffer.bof ? buffer.minIndex = buffer.first : Math.min(buffer.first, buffer.minIndex);
           },
 
           effectiveHeight(elements) {
@@ -422,8 +416,13 @@ angular.module('ui.scroll', [])
       function Adapter($attr, viewport, buffer, adjustBuffer) {
         const viewportScope = viewport.scope() || $rootScope;
         let disabled = false;
+        let self = this;
 
-        injectValue($attr.adapter, this);
+        createValueInjector('adapter')(self);
+        let topVisibleInjector = createValueInjector('topVisible');
+        let topVisibleElementInjector = createValueInjector('topVisibleElement');
+        let topVisibleScopeInjector = createValueInjector('topVisibleScope');
+        let isLoadingInjector = createValueInjector('isLoading');
 
         // Adapter API definition    
 
@@ -468,8 +467,7 @@ angular.module('ui.scroll', [])
         };
 
         this.loading = (value) => {
-          this.isLoading = value;
-          injectValue($attr.isLoading, value);
+          isLoadingInjector(value);
         };
 
         this.calculateProperties = () => {
@@ -487,12 +485,9 @@ angular.module('ui.scroll', [])
               topHeight += itemHeight;
             } else {
               if (isNewRow) {
-                this.topVisible = item.item;
-                this.topVisibleElement = item.element;
-                this.topVisibleScope = item.scope;
-                injectValue($attr.topVisible, item.item);
-                injectValue($attr.topVisibleElement, item.element);
-                injectValue($attr.topVisibleScope, item.scope);
+                topVisibleInjector(item.item);
+                topVisibleElementInjector(item.element);
+                topVisibleScopeInjector(item.scope);
               }
               break;
             }
@@ -501,14 +496,16 @@ angular.module('ui.scroll', [])
 
         // private function definitions
 
-        function injectValue(expression, value) {
+        function createValueInjector(attribute) {
+          let expression = $attr[attribute];
+          let scope = viewportScope;
+          let assign;
           if (expression) {
             let match = expression.match(/^(\S+)(?:\s+on\s+(\w(?:\w|\d)*))?$/);
             if (!match)
               throw new Error('Expected injection expression in form of \'target\' or \'target on controller\' but got \'' + expression + '\'');
             let target = match[1];
             let controllerName = match[2];
-            let scope = viewportScope;
             if (controllerName) {
               let candidate = viewport;
               scope = undefined;
@@ -523,25 +520,14 @@ angular.module('ui.scroll', [])
               if (!scope)
                 throw new Error('Failed to locate target controller \'' + controllerName + '\' to inject \'' + target + '\'');
             }
-            $parse(target).assign(scope, value);
-/*
-            let scope = viewportScope;
-            let s = viewportScope;
-            let i = expression.indexOf('.');
-            if (i>0) {
-              let ctrlName = expression.slice(0, i);
-              while (s !== $rootScope) {
-                if (s.hasOwnProperty(ctrlName) && angular.isFunction(s[ctrlName])) {
-                  scope = s;
-                  expression = expression.slice(i+1);
-                  break;
-                }
-                s = s.$parent;
-              }
-            }
-            $parse(expression).assign(scope, value);
-            */
+            assign = $parse(target).assign;
           }
+          return (value) => {
+            if (self !== value) // just to avoid injecting adapter reference in the adapter itself. Kludgy, I know.
+              self[attribute] = value;
+            if (assign)
+              assign(scope, value);
+          };
         }
 
         function applyUpdate(wrapper, newItems) {
@@ -570,7 +556,7 @@ angular.module('ui.scroll', [])
 
       function link($scope, element, $attr, controllers, linker) {
 
-        const match = $attr.uiScroll.match(/^\s*(\w+)\s+in\s+([\w\.]+)\s*$/);
+        const match = $attr.uiScroll.match(/^\s*(\w+)\s+in\s+([(\w|\$)\.]+)\s*$/);
 
         if (!(match))
           throw new Error('Expected uiScroll in form of \'_item_ in _datasource_\' but got \'' + $attr.uiScroll + '\'');
@@ -893,7 +879,6 @@ angular.module('ui.scroll', [])
                 if (result.length > 0) {
                   viewport.clipTop();
                   buffer.append(result);
-                  buffer.setUpper();
                 }
 
                 adjustBufferAfterFetch(rid);
@@ -918,7 +903,6 @@ angular.module('ui.scroll', [])
                     viewport.clipBottom();
                   }
                   buffer.prepend(result);
-                  buffer.setLower();
                 }
 
                 adjustBufferAfterFetch(rid);
