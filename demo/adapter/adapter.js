@@ -37,12 +37,15 @@ angular.module('application', ['ui.scroll', 'ui.scroll.jqlite']).controller('mai
         var newItem;
         newItem = void 0;
         if (scope.$index === 2) {
-          newItem = {
-            id: idList1,
-            content: 'a new one #' + idList1
-          };
-          idList1++;
-          return [item, newItem];
+          var newItems = [item];
+          for (var i = 0; i < 1000; i++) {
+            newItems.push({
+              id: idList1,
+              content: 'a new one #' + idList1
+            });
+            idList1++;
+          }
+          return newItems;
         }
       });
     };
