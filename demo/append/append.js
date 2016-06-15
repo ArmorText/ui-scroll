@@ -133,6 +133,7 @@ app.controller('mainController', [
 
 		$scope.prepend = function () {
 			var newItem = Server.prependItem(' (new)*');
+			$scope.datasource.minIndex = Server.first - Server.prependedData.length;
 			if (bof) {
 				$scope.adapter.prepend([newItem]);
 			}
@@ -140,6 +141,7 @@ app.controller('mainController', [
 
 		$scope.append = function () {
 			var newItem = Server.appendItem(' (new)*');
+			$scope.datasource.maxIndex = Server.max + Server.appendedData.length;
 			if (eof) {
 				$scope.adapter.append([newItem]);
 			}
